@@ -2,13 +2,6 @@ const canvas = document.getElementById("ritualCanvas");
 const ctx = canvas.getContext("2d");
 const center = { x: canvas.width / 2, y: canvas.height / 2 };
 
-const quarters = [
-  { pos: { x: center.x, y: center.y - 80 }, angle: 0, target: 0 },     // North
-  { pos: { x: center.x + 80, y: center.y }, angle: 90, target: 90 },   // East
-  { pos: { x: center.x, y: center.y + 80 }, angle: 180, target: 180 }, // South
-  { pos: { x: center.x - 80, y: center.y }, angle: 270, target: 270 }  // West
-];
-
 function drawScene() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -18,12 +11,12 @@ function drawScene() {
   ctx.arc(center.x, center.y, 30, 0, Math.PI * 2);
   ctx.fill();
 
-  // Arrow shapes
+  // Arrow shapes (square + triangle)
   ctx.fillStyle = "rgb(50,100,220)";
-  drawArrow(center.x - 15, center.y - 80, center.x, center.y - 110); // Up
-  drawArrow(center.x - 15, center.y + 50, center.x, center.y + 110); // Down
-  drawArrow(center.x - 80, center.y - 15, center.x - 110, center.y); // Left
-  drawArrow(center.x + 50, center.y - 15, center.x + 110, center.y); // Right
+  drawArrow(center.x - 15, center.y - 80, "north");
+  drawArrow(center.x - 15, center.y + 50, "south");
+  drawArrow(center.x - 80, center.y - 15, "west");
+  drawArrow(center.x + 50, center.y - 15, "east");
 
   // Corner circles
   ctx.fillStyle = "rgb(200,50,50)";
@@ -33,12 +26,8 @@ function drawScene() {
     ctx.fill();
   });
 
-  // Quarter circles
-  quarters.forEach(q => drawQuarter(q.pos.x, q.pos.y, q.angle));
-
   // Ritual gates
-  const aligned = quarters.every(q => q.angle === q.target);
-  const gateColor = aligned ? "orange" : "rgb(200,50,50)";
+  const gateColor = "orange";
   [[center.x, 10], [canvas.width - 30, center.y], [center.x, canvas.height - 30], [10, center.y]].forEach(([x, y]) => {
     ctx.fillStyle = gateColor;
     ctx.beginPath();
@@ -47,45 +36,53 @@ function drawScene() {
   });
 
   // Feedback
-  document.getElementById("feedback").textContent = aligned ? "✨ Ritual Activated! ✨" : "The energies are misaligned...";
+  document.getElementById("feedback").textContent = "✨ Ritual Activated! ✨";
 }
 
-function drawArrow(sx, sy, tx, ty) {
+function drawArrow(sx, sy, direction) {
+  // Draw square
   ctx.fillRect(sx, sy, 30, 30);
+
+  // Triangle points
+  let triangle;
+  switch (direction) {
+    case "north":
+      triangle = [
+        { x: sx, y: sy },
+        { x: sx + 30, y: sy },
+        { x: sx + 15, y: sy - 30 }
+      ];
+      break;
+    case "south":
+      triangle = [
+        { x: sx, y: sy + 30 },
+        { x: sx + 30, y: sy + 30 },
+        { x: sx + 15, y: sy + 60 }
+      ];
+      break;
+    case "east":
+      triangle = [
+        { x: sx + 30, y: sy },
+        { x: sx + 30, y: sy + 30 },
+        { x: sx + 60, y: sy + 15 }
+      ];
+      break;
+    case "west":
+      triangle = [
+        { x: sx, y: sy },
+        { x: sx, y: sy + 30 },
+        { x: sx - 30, y: sy + 15 }
+      ];
+      break;
+  }
+
+  // Draw triangle
   ctx.beginPath();
-  ctx.moveTo(tx, ty);
-  ctx.lineTo(sx, sy);
-  ctx.lineTo(sx + 30, sy);
+  ctx.moveTo(triangle[0].x, triangle[0].y);
+  ctx.lineTo(triangle[1].x, triangle[1].y);
+  ctx.lineTo(triangle[2].x, triangle[2].y);
   ctx.closePath();
   ctx.fill();
 }
-
-function drawQuarter(x, y, angle) {
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate((angle * Math.PI) / 180);
-  ctx.strokeStyle = "rgb(0,180,0)";
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.arc(0, 0, 30, 0, Math.PI / 2);
-  ctx.stroke();
-  ctx.restore();
-}
-
-canvas.addEventListener("click", e => {
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left;
-  const my = e.clientY - rect.top;
-
-  quarters.forEach((q, i) => {
-    const dx = mx - q.pos.x;
-    const dy = my - q.pos.y;
-    if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
-      q.angle = (q.angle + 90) % 360;
-    }
-  });
-
-  drawScene();
-});
 
 drawScene();
